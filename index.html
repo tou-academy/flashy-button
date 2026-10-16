@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flashy Button</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: grid; place-items: center;
+    background: #111; font-family: system-ui, sans-serif;
+    transition: background .1s;
+  }
+  body.flash { animation: bgflash .4s ease-out; }
+  @keyframes bgflash {
+    0%   { background: #fff; }
+    30%  { background: #ff0; }
+    100% { background: #111; }
+  }
+  #btn {
+    width: 220px; height: 220px; border-radius: 50%;
+    border: 8px solid #fff; color: #fff;
+    background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0143c);
+    font-size: 28px; font-weight: 700; letter-spacing: 1px;
+    cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    transition: transform .08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #btn:active { transform: scale(.94); }
+  #btn.flash { animation: btnflash .4s ease-out; }
+  @keyframes btnflash {
+    0%   { filter: brightness(3); box-shadow: 0 0 80px 30px #ff0; }
+    100% { filter: brightness(1); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.flash, #btn.flash { animation: none; }
+  }
+</style>
+</head>
+<body>
+<button id="btn" type="button">PRESS ME</button>
+<script>
+  const btn = document.getElementById('btn');
+  let ctx;
+
+  function beep() {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.exponentialRampToValueAtTime(220, t + 0.25);
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.3);
+  }
+
+  function flash() {
+    for (const el of [document.body, btn]) {
+      el.classList.remove('flash');
+      void el.offsetWidth; // restart animation
+      el.classList.add('flash');
+    }
+  }
+
+  btn.addEventListener('click', () => { flash(); beep(); });
+</script>
+</body>
+</html>
